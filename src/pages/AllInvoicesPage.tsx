@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react"
-import { useInvoiceContext, Invoice } from "../context/InvoiceContext"
+// src/pages/AllInvoicesPage.tsx
+import React, { useCallback, useEffect, useState } from "react"
+import { useInvoiceContext } from "../context/InvoiceContext"
 import {
   FileText,
   Calendar,
@@ -18,7 +19,7 @@ export default function AllInvoicesPage() {
   const [error, setError] = useState("")
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<number | null>(null)
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     setLoading(true)
     setError("")
     try {
@@ -30,7 +31,7 @@ export default function AllInvoicesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [setInvoices])
 
   useEffect(() => {
     if (invoices.length === 0) {
@@ -38,7 +39,7 @@ export default function AllInvoicesPage() {
     } else {
       setLoading(false)
     }
-  }, [])
+  }, [fetchInvoices, invoices.length])
 
   if (loading) {
     return (
@@ -57,6 +58,7 @@ export default function AllInvoicesPage() {
         <h1 className="text-4xl font-bold text-gray-800 mb-4">Invoice Dashboard</h1>
         <p className="text-xl text-gray-600">Manage and view all your invoices</p>
       </div>
+
       <div className="flex justify-end mb-4">
         <button
           onClick={fetchInvoices}
@@ -65,7 +67,6 @@ export default function AllInvoicesPage() {
           🔄 Refresh
         </button>
       </div>
-
 
       {error && (
         <div className="bg-red-100 border border-red-200 text-red-800 p-4 rounded-lg mb-6 text-center">
