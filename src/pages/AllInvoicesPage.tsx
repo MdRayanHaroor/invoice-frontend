@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react"
-//@ts-ignore
-import { getInvoices } from "../api/invoices"
+import { useInvoiceContext, Invoice } from "../context/InvoiceContext"
 import {
   FileText,
   Calendar,
@@ -8,37 +7,37 @@ import {
   Download,
   Eye,
   Loader2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react"
-
-interface Invoice {
-  id: number
-  filename: string
-  blob_url: string
-  created_at: string
-  summary?: string
-}
+//@ts-ignore
+import { getInvoices } from "../api/invoices"
 
 export default function AllInvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [loading, setLoading] = useState(true)
+  const { invoices, setInvoices } = useInvoiceContext()
+  const [loading, setLoading] = useState(invoices.length === 0)
   const [error, setError] = useState("")
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<number | null>(null)
 
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const response = await getInvoices()
-        setInvoices(response.data)
-      } catch (err) {
-        console.error("Error fetching invoices:", err)
-        setError("Failed to load invoices.")
-      } finally {
-        setLoading(false)
-      }
+  const fetchInvoices = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const response = await getInvoices()
+      setInvoices(response.data)
+    } catch (err) {
+      console.error("❌ Invoice fetch error:", err)
+      setError("Taking longer than usual to fetch invoices. Please try again.")
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchInvoices()
+  useEffect(() => {
+    if (invoices.length === 0) {
+      fetchInvoices()
+    } else {
+      setLoading(false)
+    }
   }, [])
 
   if (loading) {
@@ -58,13 +57,28 @@ export default function AllInvoicesPage() {
         <h1 className="text-4xl font-bold text-gray-800 mb-4">Invoice Dashboard</h1>
         <p className="text-xl text-gray-600">Manage and view all your invoices</p>
       </div>
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={fetchInvoices}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+        >
+          🔄 Refresh
+        </button>
+      </div>
+
 
       {error && (
-        <div className="bg-red-100 border border-red-200 text-red-800 p-4 rounded-lg mb-6">
-          <div className="flex items-center space-x-2">
+        <div className="bg-red-100 border border-red-200 text-red-800 p-4 rounded-lg mb-6 text-center">
+          <div className="flex items-center justify-center space-x-2">
             <AlertCircle className="h-5 w-5" />
             <span>{error}</span>
           </div>
+          <button
+            onClick={fetchInvoices}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -90,7 +104,9 @@ export default function AllInvoicesPage() {
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm">{new Date(invoice.created_at).toLocaleDateString()}</span>
+                  <span className="text-sm">
+                    {new Date(invoice.created_at).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
 
